@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A01 — Bộ cộng 8-bit nối tiếp carry (ripple-carry) có cờ trạng thái · Ghi chú thực hiện</title>
+<style>
+:root{
+  --bg:#ffffff; --fg:#1a1d21; --muted:#5c6570; --line:#e3e7eb;
+  --accent:#1f5fa9; --accent-soft:#eef4fb; --code-bg:#f5f7f9;
+  --ok:#137a4d; --ok-bg:#e8f6ee; --warn:#8a5a00; --warn-bg:#fdf4e2;
+  --bad:#a52020; --bad-bg:#fceded; --open:#7a5ba8; --open-bg:#f3eefa;
+  --maxw:960px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15181c; --fg:#e6e9ec; --muted:#98a2ad; --line:#2a2f36;
+    --accent:#6fa8e0; --accent-soft:#1c2733; --code-bg:#1b1f24;
+    --ok:#5cc08d; --ok-bg:#16291f; --warn:#d8a54a; --warn-bg:#2a2314;
+    --bad:#e88b8b; --bad-bg:#2b1a1a; --open:#b79ad6; --open-bg:#241d2e;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15181c; --fg:#e6e9ec; --muted:#98a2ad; --line:#2a2f36;
+  --accent:#6fa8e0; --accent-soft:#1c2733; --code-bg:#1b1f24;
+  --ok:#5cc08d; --ok-bg:#16291f; --warn:#d8a54a; --warn-bg:#2a2314;
+  --bad:#e88b8b; --bad-bg:#2b1a1a; --open:#b79ad6; --open-bg:#241d2e;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:var(--maxw); margin:0 auto; padding:0 16px 96px}
+header.doc{
+  border-bottom:1px solid var(--line); margin-bottom:28px; padding:36px 0 22px;
+}
+header.doc .eyebrow{
+  font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--muted); font-weight:600; margin-bottom:10px;
+}
+header.doc h1{font-size:clamp(24px,4.4vw,34px); line-height:1.25; margin:0 0 14px}
+.badges{display:flex; flex-wrap:wrap; gap:7px; margin-top:6px}
+.badge{
+  font-size:12.5px; padding:3px 10px; border-radius:999px;
+  border:1px solid var(--line); color:var(--muted); background:var(--accent-soft);
+  white-space:nowrap;
+}
+.badge.ok{color:var(--ok); background:var(--ok-bg); border-color:transparent}
+.badge.warn{color:var(--warn); background:var(--warn-bg); border-color:transparent}
+.badge.bad{color:var(--bad); background:var(--bad-bg); border-color:transparent}
+.badge.open{color:var(--open); background:var(--open-bg); border-color:transparent}
+nav.toc{
+  border:1px solid var(--line); border-radius:10px; padding:16px 20px;
+  margin:0 0 32px; background:var(--accent-soft);
+}
+nav.toc p{margin:0 0 8px; font-weight:700; font-size:13px; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--muted)}
+nav.toc ul{margin:0; padding-left:20px}
+nav.toc li{margin:3px 0}
+nav.toc a{color:var(--fg); text-decoration:none}
+nav.toc a:hover{color:var(--accent); text-decoration:underline}
+nav.toc ul ul{padding-left:18px; font-size:14.5px}
+h2{font-size:22px; margin:40px 0 12px; padding-bottom:6px; border-bottom:1px solid var(--line)}
+h3{font-size:18px; margin:28px 0 8px}
+h4{font-size:16px; margin:22px 0 6px; color:var(--muted)}
+p{margin:12px 0}
+a{color:var(--accent)}
+ul,ol{padding-left:24px}
+li{margin:4px 0}
+code{
+  font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  font-size:.9em; background:var(--code-bg); padding:1.5px 5px; border-radius:4px;
+}
+pre{
+  background:var(--code-bg); border:1px solid var(--line); border-radius:8px;
+  padding:14px 16px; overflow-x:auto; line-height:1.55; font-size:13.5px;
+}
+pre code{background:none; padding:0; font-size:inherit}
+blockquote{
+  margin:16px 0; padding:2px 18px; border-left:3px solid var(--accent);
+  background:var(--accent-soft); border-radius:0 8px 8px 0; color:var(--fg);
+}
+blockquote p{margin:10px 0}
+.tablewrap{overflow-x:auto; margin:16px 0; -webkit-overflow-scrolling:touch}
+table{border-collapse:collapse; width:100%; font-size:14.5px; min-width:420px}
+th,td{border:1px solid var(--line); padding:7px 11px; text-align:left; vertical-align:top}
+th{background:var(--accent-soft); font-weight:650; white-space:nowrap}
+tbody tr:nth-child(even) td{background:color-mix(in srgb, var(--code-bg) 55%, transparent)}
+hr{border:0; border-top:1px solid var(--line); margin:34px 0}
+footer.doc{
+  margin-top:56px; padding-top:18px; border-top:1px solid var(--line);
+  color:var(--muted); font-size:13.5px;
+}
+.themebtn{
+  position:fixed; right:14px; bottom:14px; z-index:10;
+  border:1px solid var(--line); background:var(--bg); color:var(--muted);
+  border-radius:999px; padding:8px 14px; font-size:13px; cursor:pointer;
+}
+.themebtn:hover{color:var(--fg)}
+@media (max-width:640px){
+  .wrap{padding:0 16px 72px}
+  header.doc{padding:26px 0 18px}
+  nav.toc{padding:14px 16px}
+}
+@media print{
+  .themebtn{display:none}
+  nav.toc{break-inside:avoid}
+  pre,table,blockquote{break-inside:avoid}
+  body{font-size:11pt}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc">
+  <div class="eyebrow">RTL2GDS · Đề A01 · Ghi chú thực hiện</div>
+  <h1>A01 — Bộ cộng 8-bit nối tiếp carry (ripple-carry) có cờ trạng thái · Ghi chú thực hiện</h1>
+  <div class="badges"><span class="badge ">A · Số học tổ hợp</span><span class="badge ">Độ khó: Trung bình (nhẹ)</span><span class="badge ">Loại mạch: Tổ hợp</span><span class="badge ok">Mô phỏng: PASS</span><span class="badge ">Tổng hợp: 48 cell · 0 FF</span><span class="badge ">Đường tới hạn: 1,34 ns</span><span class="badge warn">Physical design: CHƯA CHẠY</span></div>
+</header>
+<nav class="toc"><p>Mục lục</p><ul><li><a href="#1-bai-toan-nay-thuc-chat-la-gi">1. Bài toán này thực chất là gì</a></li><li><a href="#2-ban-chat-ky-thuat-co-che-hoat-dong">2. Bản chất kỹ thuật — cơ chế hoạt động</a></li><ul><li><a href="#bon-co-vi-sao-c-va-v-khong-thay-the-nhau">Bốn cờ — vì sao C và V không thay thế nhau</a></li></ul><li><a href="#3-doc-ma-nguon-rtl-lam-gi">3. Đọc mã nguồn: RTL làm gì</a></li><ul><li><a href="#dieu-tuyet-doi-khong-duoc-viet">Điều tuyệt đối không được viết</a></li></ul><li><a href="#4-vi-sao-chon-kien-truc-nay">4. Vì sao chọn kiến trúc này</a></li><li><a href="#5-cach-thuc-hien-lo-trinh-8-buoc">5. Cách thực hiện — lộ trình 8 bước</a></li><li><a href="#6-so-lieu-that-da-do-duoc-va-cach-doc-chung">6. Số liệu thật đã đo được và cách đọc chúng</a></li><ul><li><a href="#tung-con-so-chung-minh-gi-va-khong-chung-minh-gi">Từng con số chứng minh gì — và KHÔNG chứng minh gì</a></li></ul><li><a href="#7-tra-loi-cac-cau-hoi-ky-thuat-cua-charter-muc-2">7. Trả lời các câu hỏi kỹ thuật của Charter (mục 2)</a></li><ul><li><a href="#cau-1-khoi-cong-can-giao-dien-gi-de-tang-tren-biet-ket-qua-da-tran-hay-chua">Câu 1 — Khối cộng cần giao diện gì để tầng trên biết kết quả đã tràn hay chưa?</a></li><li><a href="#cau-2-duong-tin-hieu-nao-quyet-dinh-tan-so-toi-da-bang-chung-nao-chi-ra-no">Câu 2 — Đường tín hiệu nào quyết định tần số tối đa, bằng chứng nào chỉ ra nó?</a></li><li><a href="#cau-3-bon-co-ton-them-bao-nhieu-phan-dien-tich">Câu 3 — Bốn cờ tốn thêm bao nhiêu phần diện tích?</a></li></ul><li><a href="#8-tra-loi-cau-phan-tich-rieng-charter-muc-9">8. Trả lời câu phân tích riêng (Charter mục 9)</a></li><ul><li><a href="#ba-ket-qua-dang-noi">Ba kết quả đáng nói</a></li></ul><li><a href="#9-nhung-cho-sinh-vien-hay-sai-va-cach-phat-hien">9. Những chỗ sinh viên hay sai và cách phát hiện</a></li><li><a href="#10-cau-hoi-mentor-nen-dat-khi-bao-ve">10. Câu hỏi mentor nên đặt khi bảo vệ</a></li><li><a href="#11-gioi-han-da-chung-minh-duoc-gi-chua-chung-minh-duoc-gi">11. Giới hạn: đã chứng minh được gì, chưa chứng minh được gì</a></li><ul><li><a href="#da-chung-minh">Đã chứng minh</a></li><li><a href="#chua-chung-minh">Chưa chứng minh</a></li><li><a href="#ngoai-pham-vi-khong-duoc-khang-dinh">Ngoài phạm vi — không được khẳng định</a></li></ul></ul></nav>
+<main>
+<hr>
+<h2 id="1-bai-toan-nay-thuc-chat-la-gi">1. Bài toán này thực chất là gì</h2>
+<p>Bề mặt: "cộng hai số 8 bit và sinh bốn cờ". Nghe như bài tập tuần đầu.</p>
+<p>Thực chất, Charter chọn A01 làm đề mở đầu vì nó là <strong>ví dụ sạch nhất</strong> để dạy một điều rất
+khó dạy: <strong>diện tích và tốc độ là hai trục độc lập, và tối ưu sai trục là lãng phí</strong>.</p>
+<p>Charter mục 10 nói thẳng chỗ hay tắc: <em>"Nhầm 'diện tích lớn' với 'chậm'. Bộ cộng ripple
+NHỎ nhưng CHẬM vì chuỗi carry 8 tầng."</em> Toàn bộ hồ sơ này tồn tại để biến câu đó từ một
+lời khẳng định thành một <strong>số đo</strong>.</p>
+<p>Bối cảnh ứng dụng — vòng đeo tay đếm bước chân — không phải trang trí. Nó quyết định câu
+trả lời cuối cùng: với tần số lấy mẫu ~50 Hz, "chậm" của ripple-carry <strong>không phải nhược
+điểm</strong>, và chọn carry-lookahead ở đây là tối ưu sai chỗ.</p>
+<h2 id="2-ban-chat-ky-thuat-co-che-hoat-dong">2. Bản chất kỹ thuật — cơ chế hoạt động</h2>
+<p>Hai phép cộng một bit trông giống nhau nhưng có bản chất thời gian khác hẳn:</p>
+<pre><code>sum[i]     = a[i] ⊕ b[i] ⊕ carry[i]              ← chờ carry[i], rồi 1 tầng XOR
+carry[i+1] = (a[i]&amp;b[i]) | (a[i]&amp;carry[i]) | (b[i]&amp;carry[i])   ← chờ carry[i], rồi sinh carry[i+1]
+</code></pre>
+<p>Cả hai đều chờ <code>carry[i]</code>. Khác biệt nằm ở <strong>cái gì phụ thuộc vào cái gì tiếp theo</strong>:</p>
+<ul>
+<li>Tám phép tính <code>sum[i]</code> <strong>song song</strong> với nhau. Không <code>sum</code> nào cần <code>sum</code> khác.</li>
+<li>Tám phép tính <code>carry[i+1]</code> <strong>nối tiếp</strong>. Mắt xích <code>i+1</code> không thể bắt đầu trước khi mắt
+  xích <code>i</code> xong.</li>
+</ul>
+<p>Đây là điểm mấu chốt và cũng là chỗ sinh viên hay hiểu nhầm:</p>
+<blockquote>
+<p><strong>"Nối tiếp" ở đây là phụ thuộc DỮ LIỆU, không phải phụ thuộc CHU KỲ.</strong>
+Không có clock nào cả. <code>carry[i+1]</code> phải đợi điện áp trên dây <code>carry[i]</code> xác lập — đó là
+vật lý, không phải giao thức. Mạch vẫn là <strong>tổ hợp thuần</strong>: đầu ra chỉ là hàm của đầu vào
+hiện tại, không phụ thuộc lịch sử.</p>
+</blockquote>
+<p>Hệ quả định lượng:</p>
+<pre><code>t_A01  ≈  8 × t_carry_stage  +  t_XOR
+          └── áp đảo ──┘        └ không đáng kể ┘
+</code></pre>
+<p>Độ rộng <code>N</code> gấp đôi ⟹ độ trễ gấp đôi (<code>O(N)</code>), diện tích cũng gấp đôi (<code>O(N)</code>). Ripple là
+kiến trúc <strong>rẻ nhất về diện tích</strong> và <strong>đắt nhất về độ trễ</strong> trong họ bộ cộng.</p>
+<h3 id="bon-co-vi-sao-c-va-v-khong-thay-the-nhau">Bốn cờ — vì sao <code>C</code> và <code>V</code> không thay thế nhau</h3>
+<p>Cùng một mẫu bit 8 bit, hai cách <strong>diễn giải</strong>:</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>Không dấu</th>
+<th>Có dấu (bù 2)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dải</td>
+<td>0 … 255</td>
+<td>−128 … +127</td>
+</tr>
+<tr>
+<td>Cờ báo sai</td>
+<td><code>C</code></td>
+<td><code>V</code></td>
+</tr>
+<tr>
+<td>Quy tắc</td>
+<td>kết quả &gt; 255</td>
+<td>hai toán hạng cùng dấu ra kết quả khác dấu</td>
+</tr>
+</tbody>
+</table></div>
+<p>Bốn tổ hợp <code>(C,V)</code> đều xảy ra được, và cả bốn đều có trong testbench:</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>A + B</th>
+<th style="text-align: center;">C</th>
+<th style="text-align: center;">V</th>
+<th>Đọc thế nào</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>1 + 1</code></td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td>Đúng ở cả hai cách hiểu</td>
+</tr>
+<tr>
+<td><code>200 + 100</code></td>
+<td style="text-align: center;"><strong>1</strong></td>
+<td style="text-align: center;">0</td>
+<td>Tràn unsigned; signed −56 + 100 = 44 — đúng</td>
+</tr>
+<tr>
+<td><code>127 + 1</code></td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;"><strong>1</strong></td>
+<td>Không tràn unsigned; signed 127 + 1 = −128 — sai</td>
+</tr>
+<tr>
+<td><code>128 + 128</code></td>
+<td style="text-align: center;"><strong>1</strong></td>
+<td style="text-align: center;"><strong>1</strong></td>
+<td>Tràn cả hai</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="3-doc-ma-nguon-rtl-lam-gi">3. Đọc mã nguồn: RTL làm gì</h2>
+<p>Toàn bộ kiến trúc nằm trong 8 dòng:</p>
+<pre><code class="language-systemverilog">logic [8:0] carry;
+assign carry[0] = 1'b0;
+
+genvar i;
+generate
+    for (i = 0; i &lt; 8; i = i + 1) begin : GEN_FA
+        assign sum[i]     = a[i] ^ b[i] ^ carry[i];
+        assign carry[i+1] = (a[i] &amp; b[i])
+                          | (a[i] &amp; carry[i])
+                          | (b[i] &amp; carry[i]);
+    end
+endgenerate
+</code></pre>
+<p>Ba điểm cần giảng kỹ:</p>
+<ol>
+<li><strong><code>generate for</code> là nhân bản KHÔNG GIAN, không phải vòng lặp thời gian.</strong> Nó tạo ra 8
+   bản sao phần cứng tồn tại đồng thời, không phải 8 lần chạy tuần tự. Sinh viên quen lập
+   trình phần mềm gần như luôn hiểu nhầm chỗ này.</li>
+<li><strong><code>carry[i+1]</code> là hàm đa số (majority)</strong> của ba bit <code>a[i]</code>, <code>b[i]</code>, <code>carry[i]</code>. Nhận ra
+   điều này giải thích vì sao <code>abc</code> map nó thành các cell <code>maj3</code>, <code>a22oi</code>, <code>o21ai</code> — đó
+   đều là các dạng hiện thực của majority.</li>
+<li><strong>Mảng <code>carry</code> khai báo 9 bit cho 8 tầng.</strong> <code>carry[0]</code> là carry vào (bằng 0 vì đây là bộ
+   <strong>cộng</strong>, không phải cộng/trừ — đó là A02), <code>carry[8]</code> là carry ra, chính là cờ <code>C</code>.</li>
+</ol>
+<p>Bốn cờ:</p>
+<pre><code class="language-systemverilog">assign c = carry[8];                            // 0 cổng thêm — đã có sẵn
+assign z = (sum == 8'h00);                      // cây NOR 8 ngõ
+assign n = sum[7];                              // 0 cổng thêm — chỉ là dây
+assign v = ~(a[7] ^ b[7]) &amp; (sum[7] ^ a[7]);    // 2 XOR + 1 INV + 1 AND
+</code></pre>
+<p>Netlist sau tổng hợp xác nhận <code>n</code> không tốn gì: nó chứa <code>assign sum[7] = n;</code> — hai tên gọi
+của <strong>cùng một net</strong>.</p>
+<h3 id="dieu-tuyet-doi-khong-duoc-viet">Điều tuyệt đối không được viết</h3>
+<pre><code class="language-systemverilog">assign sum = a + b;   // ❌ CẤM trong RTL nộp bài
+</code></pre>
+<p>Toán tử <code>+</code> cho phép công cụ tự chọn kiến trúc — thường là carry-lookahead hoặc
+carry-select. Làm vậy là <strong>xoá mất chính thứ Charter mục 9 yêu cầu quan sát</strong>. Toán tử <code>+</code>
+chỉ được dùng trong golden model (<code>05_VERIFICATION/golden_model/a01_reference.sv</code>), nơi nó
+đóng vai trò chuẩn so sánh độc lập.</p>
+<h2 id="4-vi-sao-chon-kien-truc-nay">4. Vì sao chọn kiến trúc này</h2>
+<p>Không phải vì ripple "tốt", mà vì <strong>ứng dụng không cần nhanh</strong>:</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Tiêu chí của vòng đeo tay</th>
+<th>Ripple-carry đáp ứng?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tần số lấy mẫu ~50 Hz (chu kỳ ~20 ms)</td>
+<td>✅ Dư sức — độ trễ đo được 1,34 ns</td>
+</tr>
+<tr>
+<td>Ngân sách pin cực nhỏ</td>
+<td>✅ Ít cell nhất ⟹ ít rò và ít chuyển mạch nhất</td>
+</tr>
+<tr>
+<td>Diện tích 1×1 tile</td>
+<td>✅ 285,27 µm², rất thoải mái</td>
+</tr>
+<tr>
+<td>Cần tần số cao</td>
+<td>❌ Không cần</td>
+</tr>
+</tbody>
+</table></div>
+<p>Biên an toàn: <code>20 ms / 1,34 ns ≈ 15 triệu lần</code>. Chọn CLA ở đây là trả thêm diện tích và
+công suất để mua tốc độ mà ứng dụng <strong>không bao giờ dùng đến</strong>.</p>
+<p>So sánh đầy đủ bốn kiến trúc ở <code>03_ARCHITECTURE/tradeoff.md</code> §4 — lưu ý CLA nằm <strong>ngoài
+phạm vi</strong> theo Charter mục 3, chỉ được so trên giấy.</p>
+<h2 id="5-cach-thuc-hien-lo-trinh-8-buoc">5. Cách thực hiện — lộ trình 8 bước</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Bước</th>
+<th>Công cụ</th>
+<th>Bằng chứng sinh ra</th>
+<th>Trạng thái</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Suy bảng hành vi từ Charter mục 1 và mục 8</td>
+<td>—</td>
+<td><code>02_SPECIFICATION/functional_spec.md</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Viết mô hình chuẩn Python độc lập</td>
+<td>CPython 3</td>
+<td><code>python_reference_run.log</code></td>
+<td>✅ PASS</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Viết RTL với chuỗi ripple <strong>tường minh</strong></td>
+<td>—</td>
+<td><code>04_IMPLEMENTATION/rtl/</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Viết testbench tự kiểm + assertion bất biến</td>
+<td>Icarus Verilog 12.0</td>
+<td><code>simulation.log</code></td>
+<td>✅ 65 546/0 lỗi</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Tổng hợp lên sky130, <strong>kiểm 0 flip-flop</strong></td>
+<td>Yosys 0.33</td>
+<td><code>synth_stat.txt</code></td>
+<td>✅ 48 cell, 0 FF</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Đo diện tích tăng thêm do 4 cờ (tổng hợp 2 bản)</td>
+<td>Yosys 0.33</td>
+<td><code>physical_report_flag_area.md</code></td>
+<td>✅ +46,2 %</td>
+</tr>
+<tr>
+<td>7</td>
+<td>STA với clock ảo, <strong>đếm tầng carry</strong></td>
+<td>OpenSTA 3.1.0</td>
+<td><code>sta/critical_path_analysis.md</code></td>
+<td>✅ 1,34 ns</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Physical design RTL→GDSII</td>
+<td>LibreLane + sky130A</td>
+<td><code>06_GDSII/</code></td>
+<td>⬜ chưa chạy</td>
+</tr>
+</tbody>
+</table></div>
+<p>Chạy lại toàn bộ: <code>07_TRACEABILITY/evidence_index.md</code> §6.</p>
+<h2 id="6-so-lieu-that-da-do-duoc-va-cach-doc-chung">6. Số liệu thật đã đo được và cách đọc chúng</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Chỉ số</th>
+<th style="text-align: right;">Giá trị</th>
+<th>Công cụ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Vector kiểm chứng</td>
+<td style="text-align: right;">65 536/65 536 khớp, 0 lỗi</td>
+<td>Icarus Verilog 12.0</td>
+</tr>
+<tr>
+<td>Vi phạm bất biến</td>
+<td style="text-align: right;">0 / 65 546</td>
+<td>như trên</td>
+</tr>
+<tr>
+<td>Số cell</td>
+<td style="text-align: right;"><strong>48</strong></td>
+<td>Yosys 0.33 + sky130_fd_sc_hd</td>
+</tr>
+<tr>
+<td>Flip-flop</td>
+<td style="text-align: right;"><strong>0</strong></td>
+<td>như trên</td>
+</tr>
+<tr>
+<td>Diện tích</td>
+<td style="text-align: right;"><strong>285,2736 µm²</strong></td>
+<td>như trên</td>
+</tr>
+<tr>
+<td>Chỉ tính <code>SUM</code> (không cờ)</td>
+<td style="text-align: right;">24 cell · 195,1872 µm²</td>
+<td>như trên</td>
+</tr>
+<tr>
+<td>Đường tới hạn</td>
+<td style="text-align: right;"><code>b[0] → v</code></td>
+<td>OpenSTA 3.1.0</td>
+</tr>
+<tr>
+<td><strong>Độ trễ tổ hợp</strong></td>
+<td style="text-align: right;"><strong>1,34 ns</strong></td>
+<td>như trên</td>
+</tr>
+<tr>
+<td>Đường nhanh nhất <code>b[0] → sum[0]</code></td>
+<td style="text-align: right;"><strong>0,03 ns</strong></td>
+<td>như trên</td>
+</tr>
+<tr>
+<td>Công suất</td>
+<td style="text-align: right;">12,1 µW — 100 % tổ hợp, 0 % tuần tự</td>
+<td>như trên</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="tung-con-so-chung-minh-gi-va-khong-chung-minh-gi">Từng con số chứng minh gì — và KHÔNG chứng minh gì</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Con số</th>
+<th><strong>Chứng minh</strong></th>
+<th><strong>KHÔNG chứng minh</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>65 536/65 536 khớp</td>
+<td>Hàm của DUT <strong>tương đương</strong> golden model. Không còn ca hành vi nào chưa kiểm.</td>
+<td>Kiến trúc là ripple-carry. Một bộ CLA cũng PASS hết.</td>
+</tr>
+<tr>
+<td>0 flip-flop</td>
+<td>Đúng phân loại Tổ hợp của Charter, xác nhận bởi <strong>hai nguồn độc lập</strong> (bảng cell + công suất nhóm Sequential = 0 %)</td>
+<td>Netlist tương đương RTL về chức năng — cần mô phỏng gate-level</td>
+</tr>
+<tr>
+<td>48 cell · 285,27 µm²</td>
+<td>Ripple-carry <strong>nhỏ</strong> — nhỏ hơn cả ước lượng 120–180 cell của Charter</td>
+<td>Diện tích sau P&amp;R — sẽ khác vì có dây và cell <code>lpflow_*</code> bị <code>dont_use</code></td>
+</tr>
+<tr>
+<td>1,34 ns</td>
+<td>Độ trễ <strong>ở mức sau tổng hợp</strong>, góc <code>tt_025C_1v80</code></td>
+<td>Độ trễ thật sau routing (sẽ <strong>lớn hơn</strong>, chưa có RC dây)</td>
+</tr>
+<tr>
+<td>12,1 µW</td>
+<td>Thứ tự độ lớn công suất</td>
+<td>Công suất thật của ứng dụng — dùng activity mặc định, không lấy từ VCD</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="7-tra-loi-cac-cau-hoi-ky-thuat-cua-charter-muc-2">7. Trả lời các câu hỏi kỹ thuật của Charter (mục 2)</h2>
+<h3 id="cau-1-khoi-cong-can-giao-dien-gi-de-tang-tren-biet-ket-qua-da-tran-hay-chua">Câu 1 — Khối cộng cần giao diện gì để tầng trên biết kết quả đã tràn hay chưa?</h3>
+<p><strong>Cần hai cờ khác nhau, không phải một.</strong> <code>C</code> trả lời "có vượt 255 khi coi là số không
+dấu?"; <code>V</code> trả lời "có sai dấu khi coi là bù 2?". Bằng chứng: bốn tổ hợp <code>(C,V)</code> đều xảy ra
+trong dữ liệu đã chạy (bảng ở §2), nên hai cờ <strong>độc lập</strong>. Với ứng dụng đếm bước chân (số
+không dấu), <code>C</code> là cờ firmware thực sự dùng; <code>V</code> có mặt để khối dùng lại được trong ngữ
+cảnh bù 2.</p>
+<h3 id="cau-2-duong-tin-hieu-nao-quyet-dinh-tan-so-toi-da-bang-chung-nao-chi-ra-no">Câu 2 — Đường tín hiệu nào quyết định tần số tối đa, bằng chứng nào chỉ ra nó?</h3>
+<p><strong>Chuỗi carry.</strong> Bằng chứng đo được trên <strong>cùng một netlist</strong>:</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Đường</th>
+<th>Nội dung</th>
+<th style="text-align: right;">Độ trễ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>b[0] → sum[0]</code></td>
+<td>1 XOR, <code>carry[0]</code> là hằng số nên không phải chờ</td>
+<td style="text-align: right;"><strong>0,03 ns</strong></td>
+</tr>
+<tr>
+<td><code>b[0] → v</code></td>
+<td>qua 7 tầng carry rồi vào logic cờ</td>
+<td style="text-align: right;"><strong>1,34 ns</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p>Chênh <strong>≈ 45×</strong> với cùng điểm xuất phát, cùng thư viện. Khác biệt duy nhất: đường thứ hai
+phải chờ carry lan qua các tầng. Nếu XOR là nút thắt thì <code>sum[0]</code> — thuần XOR — đã phải
+chậm; thực tế nó là đường <strong>nhanh nhất</strong> của toàn thiết kế.</p>
+<h3 id="cau-3-bon-co-ton-them-bao-nhieu-phan-dien-tich">Câu 3 — Bốn cờ tốn thêm bao nhiêu phần diện tích?</h3>
+<p><strong>+46,2 % diện tích (+24 cell, +90,09 µm²)</strong>, đo bằng cách tổng hợp hai phiên bản cùng
+kiến trúc, cùng thư viện, cùng script:</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Phiên bản</th>
+<th style="text-align: right;">Cell</th>
+<th style="text-align: right;">Diện tích</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Chỉ <code>SUM</code></td>
+<td style="text-align: right;">24</td>
+<td style="text-align: right;">195,1872 µm²</td>
+</tr>
+<tr>
+<td><code>SUM</code> + 4 cờ</td>
+<td style="text-align: right;">48</td>
+<td style="text-align: right;">285,2736 µm²</td>
+</tr>
+</tbody>
+</table></div>
+<p>Phân bổ: <code>C</code> và <code>N</code> tốn <strong>0 cổng</strong>; toàn bộ 24 cell tăng thêm thuộc về <code>Z</code> (cây NOR) và <code>V</code>.</p>
+<p><strong>Thêm một chi phí ít ai nghĩ tới:</strong> bốn cờ còn làm đường tới hạn dài thêm <strong>+11,7 %</strong>
+(1,34 ns tới <code>v</code> so với 1,20 ns tới <code>c</code>).</p>
+<h2 id="8-tra-loi-cau-phan-tich-rieng-charter-muc-9">8. Trả lời câu phân tích riêng (Charter mục 9)</h2>
+<blockquote>
+<p><em>"Xác định đường tới hạn trong báo cáo STA. Chỉ ra nó đi qua bao nhiêu tầng carry, và
+giải thích vì sao chuỗi carry quyết định tần số tối đa chứ không phải phép XOR tính tổng."</em></p>
+</blockquote>
+<p><strong>Đường tới hạn:</strong> <code>b[0]</code> → <code>v</code>, <strong>1,34 ns</strong>, 8 cell.
+<strong>Đường tới <code>c</code>:</strong> 8 cell, <strong>toàn bộ thuộc chuỗi carry</strong> — đúng bằng số tầng dự đoán từ RTL.</p>
+<p>Chi tiết từng cell và lập luận đầy đủ: <code>06_GDSII/sta/critical_path_analysis.md</code>.</p>
+<h3 id="ba-ket-qua-dang-noi">Ba kết quả đáng nói</h3>
+<p><strong>① Endpoint tới hạn là <code>v</code>, không phải <code>c</code>.</strong> Trái trực giác "carry-out chậm nhất". Cả hai
+đường cùng đến mốc 1,17 ns tại cell <code>_82_</code>; khác biệt ở cell cuối: <code>and3b_1</code> (tính <code>V</code>,
+0,17 ns) chậm hơn <code>a21oi_1</code> (tính <code>C</code>, 0,03 ns). Kết quả này <strong>xác nhận dự đoán</strong> đã ghi
+<strong>trước khi chạy STA</strong> trong <code>03_ARCHITECTURE/datapath.md</code> §3.</p>
+<p><strong>② "8 cell trên đường" KHÔNG đồng nghĩa "8 tầng carry" một cách hiển nhiên.</strong> Số 8 trùng
+dự đoán, nhưng đọc kết nối netlist thì cell đầu <code>_43_</code> (<code>a22oi_1</code>) nhận <strong>cả</strong> <code>a[0]</code>,
+<code>b[0]</code>, <code>a[1]</code>, <code>b[1]</code> — nó gộp số hạng sinh carry của <strong>hai</strong> bit. <code>abc</code> cũng đổi cực tính
+xen kẽ AOI/OAI để bớt inverter. Kết luận về số tầng phải đến từ <strong>đọc netlist</strong>, không từ
+<strong>đếm cell</strong>.</p>
+<p><strong>③ Công suất xác nhận lại "0 ô nhớ" một cách độc lập.</strong> <code>report_power</code> cho 100 % công
+suất thuộc nhóm Combinational, 0 % Sequential, 0 % Clock. Đây là bằng chứng thứ hai, khác
+nguồn với bảng cell của Yosys.</p>
+<h2 id="9-nhung-cho-sinh-vien-hay-sai-va-cach-phat-hien">9. Những chỗ sinh viên hay sai và cách phát hiện</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Sai lầm</th>
+<th>Hậu quả</th>
+<th>Phát hiện bằng bằng chứng nào</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Viết <code>assign sum = a + b;</code> cho gọn</td>
+<td>Mất kiến trúc ripple; không đếm được tầng carry</td>
+<td>Đọc RTL; và STA sẽ cho đường ngắn bất thường, số cell <code>maj3</code>/<code>a22oi</code> không thành chuỗi</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Đặt thanh ghi tích luỹ <strong>vào trong</strong> A01</td>
+<td>Đổi loại mạch sang Tuần tự, vi phạm Charter mục 10</td>
+<td><code>synth_stat.txt</code> có cell <code>__dfxtp</code>; <code>report_power</code> có nhóm Sequential ≠ 0 %</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Nhầm "diện tích lớn" với "chậm"</td>
+<td>Kết luận ngược hoàn toàn</td>
+<td>So 48 cell (nhỏ) với 1,34 ns so 0,03 ns (chậm gấp 45×)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Tưởng <code>C</code> và <code>V</code> là một</td>
+<td>Firmware xử lý tràn sai</td>
+<td>TC-003 (<code>C=1,V=0</code>) và TC-004 (<code>C=0,V=1</code>) — cặp phản chứng</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Nghĩ chuỗi carry "toàn số 1" là ca chậm nhất</td>
+<td>Chọn sai vector đo timing</td>
+<td>TC-007 (<code>127+127</code>) có <code>carry=011111110</code> nhưng chỉ <strong>1</strong> tầng lan, vì mỗi tầng <strong>tự sinh</strong> carry</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Diễn giải "period 10 ns" thành "chạy ở 100 MHz"</td>
+<td>Khẳng định vượt mức</td>
+<td><code>02_SPECIFICATION/timing.md</code> §3 — <code>vclk</code> là mốc quy chiếu, A01 không có clock</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Dùng waveform để chứng minh độ trễ</td>
+<td>Waveform hành vi là zero-delay</td>
+<td>Mở VCD: mọi tín hiệu đổi tức thời tại <code>#1</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td>Kết luận "mô phỏng PASS ⟹ kiến trúc đúng"</td>
+<td>Kiểm chứng chức năng mù về cấu trúc</td>
+<td>Một bộ CLA cũng PASS 65 536/65 536</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Tự chọn phương án xử lý ngân sách chân</td>
+<td>Charter mục 4 bắt <strong>hỏi giảng viên trước</strong></td>
+<td><code>02_SPECIFICATION/interface.md</code> §5 — còn để 🟡 MỞ</td>
+</tr>
+<tr>
+<td>10</td>
+<td>So số cell/diện tích của A01 với đề khác</td>
+<td>Hai đề có thể chạy môi trường khác</td>
+<td><code>02_SPECIFICATION/parameters.md</code> §2 — điều kiện tạo bằng chứng</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="10-cau-hoi-mentor-nen-dat-khi-bao-ve">10. Câu hỏi mentor nên đặt khi bảo vệ</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Câu hỏi</th>
+<th>Đáp án mong đợi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Vì sao khối này có đúng 0 flip-flop?</td>
+<td>Vì là mạch tổ hợp: đầu ra chỉ là hàm của đầu vào hiện tại. Thanh ghi TỔNG nằm <strong>ngoài</strong> A01.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Không có clock, vậy sao carry lại "đi tuần tự" qua 8 tầng?</td>
+<td>"Tuần tự" ở đây là phụ thuộc <strong>dữ liệu</strong>, không phải phụ thuộc <strong>chu kỳ</strong>. <code>carry[i+1]</code> chờ điện áp trên <code>carry[i]</code> xác lập, không chờ cạnh clock.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Vì sao <code>sum[i]</code> không ổn định trước <code>carry[i]</code>?</td>
+<td>Vì <code>sum[i] = a[i] ⊕ b[i] ⊕ carry[i]</code> — <code>carry[i]</code> là một trong ba toán hạng.</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>C</code> khác <code>V</code> ở chỗ nào? Cho ví dụ <code>C=1, V=0</code>.</td>
+<td><code>C</code> = tràn không dấu, <code>V</code> = tràn có dấu. Ví dụ: <code>255 + 1</code> → <code>C=1, V=0</code>.</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Chuỗi <code>carry</code> của <code>127+127</code> toàn số 1 — đây có phải ca chậm nhất không?</td>
+<td><strong>Không.</strong> Mỗi tầng tự sinh carry (<code>a[i]&amp;b[i]=1</code>) nên không phải chờ tầng trước. Ca chậm nhất là <code>255+1</code>, lan đủ 8 tầng.</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Bạn đếm 8 cell trên đường tới <code>c</code> — có chắc đó là 8 tầng carry không?</td>
+<td>Phải đọc kết nối netlist. <code>_43_</code> gộp bit 0 và bit 1 vào một cell, nên ánh xạ không 1:1.</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Vì sao đường tới hạn kết thúc ở <code>v</code> chứ không ở <code>c</code>?</td>
+<td>Cả hai cùng xuất phát từ <code>_82_</code> tại 1,17 ns; cell cuối tính <code>V</code> (<code>and3b_1</code>, 0,17 ns) chậm hơn cell cuối tính <code>C</code> (<code>a21oi_1</code>, 0,03 ns).</td>
+</tr>
+<tr>
+<td>8</td>
+<td>65 536/65 536 PASS — điều này chứng minh mạch là ripple-carry chưa?</td>
+<td>Chưa. Kiểm chứng chức năng mù về cấu trúc. Bằng chứng kiến trúc phải đọc từ RTL và netlist.</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Con số 1,34 ns có phải độ trễ thật của chip không?</td>
+<td>Không. Đây là độ trễ <strong>sau tổng hợp</strong>, chưa có RC dây, chỉ một góc PVT. Sau routing sẽ lớn hơn.</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Ripple nhỏ nhưng chậm — vậy có nên đổi sang CLA không?</td>
+<td>Không, vì hai lý do: CLA nằm ngoài phạm vi (Charter mục 3), và ứng dụng chỉ cần ~50 Hz trong khi khối chạy được ở mức ns — tối ưu sai chỗ.</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Bốn cờ tốn bao nhiêu?</td>
+<td>+46,2 % diện tích (+24 cell) và +11,7 % độ trễ. <code>C</code>, <code>N</code> tốn 0 cổng; toàn bộ là <code>Z</code> và <code>V</code>.</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Vấn đề ngân sách chân đã giải quyết chưa?</td>
+<td>Chưa — 28 bit trên 24 chân, Charter mục 4 bắt hỏi giảng viên trước. Ba phương án đã phân tích, chưa chọn.</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="11-gioi-han-da-chung-minh-duoc-gi-chua-chung-minh-duoc-gi">11. Giới hạn: đã chứng minh được gì, chưa chứng minh được gì</h2>
+<h3 id="da-chung-minh">Đã chứng minh</h3>
+<ol>
+<li>Hàm của A01 đúng trên <strong>toàn bộ</strong> không gian đầu vào (65 536/65 536, 0 lỗi).</li>
+<li>Năm bất biến của đặc tả luôn giữ (0 vi phạm / 65 546 vector).</li>
+<li>Ba hiện thực độc lập (Python, SV reference, RTL) đồng ý với nhau.</li>
+<li><strong>0 ô nhớ</strong> — xác nhận bởi hai bằng chứng độc lập (bảng cell + báo cáo công suất).</li>
+<li>Ripple-carry <strong>nhỏ</strong>: 48 cell, thấp hơn cả ước lượng 120–180 của Charter.</li>
+<li>Ripple-carry <strong>chậm</strong>: 1,34 ns so với 0,03 ns trên cùng netlist — chênh 45×.</li>
+<li>Bốn cờ tốn +46,2 % diện tích và +11,7 % độ trễ.</li>
+</ol>
+<h3 id="chua-chung-minh">Chưa chứng minh</h3>
+<ol>
+<li>Netlist tương đương RTL về chức năng — cần mô phỏng gate-level.</li>
+<li>Độ trễ <strong>thật sau routing</strong> — 1,34 ns chưa tính ký sinh dây.</li>
+<li>Biên an toàn qua các góc PVT — mới chạy <code>tt_025C_1v80</code>.</li>
+<li>Công suất thật của ứng dụng — 12,1 µW dùng activity mặc định.</li>
+<li>Layout tuân thủ quy tắc chế tạo (DRC), khớp netlist (LVS), và có file GDSII.</li>
+<li>Lớp vỏ vật lý 24 chân — 🟡 <strong>chờ quyết định của giảng viên</strong>.</li>
+</ol>
+<h3 id="ngoai-pham-vi-khong-duoc-khang-dinh">Ngoài phạm vi — không được khẳng định</h3>
+<p>"Đã sign-off", "đã tape-out", "đã chế tạo", "đã kiểm tra sau chế tạo", "chạy được ở XXX MHz".
+Charter mục 3 loại tất cả khỏi phạm vi đề tài.</p>
+<hr>
+<p><em>Phiên bản: v1.0 · Ngày: 2026-09-24</em></p>
+</main>
+<footer class="doc">
+  Tài liệu sinh từ <code>implementation-notes_A01.md</code>.
+  Mọi số liệu đều kèm công cụ, phiên bản và lệnh tái lập trong
+  <code>07_TRACEABILITY/evidence_index.md</code>.
+</footer>
+</div>
+<script>
+(function(){
+  var b=document.createElement('button');
+  b.className='themebtn'; b.type='button';
+  function lbl(){var t=document.documentElement.getAttribute('data-theme');
+    return t==='dark'?'Nen sang':(t==='light'?'Nen toi':'Doi nen');}
+  b.textContent=lbl();
+  try{var s=localStorage.getItem('rtl2gds-theme'); if(s)document.documentElement.setAttribute('data-theme',s);}catch(e){}
+  b.textContent=lbl();
+  b.addEventListener('click',function(){
+    var cur=document.documentElement.getAttribute('data-theme');
+    var mq=window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var next=cur?(cur==='dark'?'light':'dark'):(mq?'light':'dark');
+    document.documentElement.setAttribute('data-theme',next);
+    try{localStorage.setItem('rtl2gds-theme',next);}catch(e){}
+    b.textContent=lbl();
+  });
+  document.body.appendChild(b);
+})();
+</script>
+</body>
+</html>

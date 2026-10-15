@@ -1,0 +1,52 @@
+{
+  "project_id": "A01",
+  "title": "Bộ cộng 8-bit nối tiếp carry (ripple-carry) có cờ trạng thái",
+  "group": "A · Số học tổ hợp",
+  "difficulty": "Trung bình (nhẹ)",
+  "circuit_type": "combinational",
+  "architecture_template": "COMB_ARITH",
+  "charter_pin_status": "Vượt",
+
+  "top_module": "a01_ripple_adder",
+  "width": 8,
+  "carry_stages": 8,
+  "flags": ["C", "Z", "N", "V"],
+  "flag_bus_order": "{V,N,Z,C}",
+  "has_clock": false,
+  "has_reset": false,
+  "expected_ff": 0,
+
+  "technology": "sky130A",
+  "std_cell_library": "sky130_fd_sc_hd",
+  "liberty_corner": "tt_025C_1v80",
+  "flow": "LibreLane/OpenROAD",
+
+  "pin_budget": {
+    "in_bits": 16,
+    "out_bits": 12,
+    "total_bits": 28,
+    "available_pins": 24,
+    "status": "OVER_BUDGET"
+  },
+
+  "measured": {
+    "simulation_tool": "Icarus Verilog 12.0",
+    "simulation_checks": 65546,
+    "simulation_failures": 0,
+    "synthesis_tool": "Yosys 0.33",
+    "cells": 48,
+    "flip_flops": 0,
+    "area_um2": 285.2736,
+    "cells_sum_only": 24,
+    "area_sum_only_um2": 195.1872,
+    "flag_area_overhead_pct": 46.2
+  },
+
+  "not_run": ["sta", "power", "floorplan", "placement", "cts", "routing", "drc", "lvs", "gds"],
+  "not_applicable": ["cts"],
+  "open_issues": [
+    "AC-15: ngân sách chân 28 bit > 24 chân — cần giảng viên quyết định phương án"
+  ],
+
+  "status": "core_frozen_verified__physical_wrapper_open"
+}

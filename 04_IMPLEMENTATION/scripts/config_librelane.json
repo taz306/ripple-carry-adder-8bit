@@ -1,0 +1,34 @@
+{
+  "//": "A01 — cau hinh LibreLane/OpenLane2. MO RONG TU NGUYEN (Charter muc 3).",
+  "//1": "A01 la mach TO HOP: khong co clock that. CLOCK_PORT de rong.",
+  "//2": "Cac con so FP_CORE_UTIL / DIE_AREA la DIEM XUAT PHAT, phai dieu chinh",
+  "//3": "theo ket qua that cua lan chay dau tien roi ghi lai vao 06_GDSII/floorplan/.",
+
+  "DESIGN_NAME": "a01_ripple_adder",
+  "VERILOG_FILES": ["dir::../rtl/a01_ripple_adder.sv"],
+  "PNR_SDC_FILE": "dir::../constraints/a01_virtual_clock.sdc",
+  "SIGNOFF_SDC_FILE": "dir::../constraints/a01_virtual_clock.sdc",
+
+  "CLOCK_PORT": "",
+  "CLOCK_PERIOD": 10.0,
+
+  "PDK": "sky130A",
+  "STD_CELL_LIBRARY": "sky130_fd_sc_hd",
+
+  "FP_SIZING": "relative",
+  "FP_CORE_UTIL": 40,
+  "PL_TARGET_DENSITY_PCT": 45,
+
+  "RUN_CTS": false,
+  "RUN_LINTER": true,
+  "RUN_KLAYOUT_DRC": true,
+  "RUN_MAGIC_DRC": true,
+  "RUN_LVS": true,
+
+  "SYNTH_STRATEGY": "AREA 0",
+
+  "//4": "RUN_CTS = false vi khong co clock. Day la ket qua HOP LE, khong phai",
+  "//5": "buoc bi bo sot — xem 06_GDSII/cts/README.md.",
+  "//6": "SYNTH_STRATEGY AREA 0 phu hop voi ung dung vong deo tay: uu tien",
+  "//7": "dien tich/cong suat hon toc do (xem 03_ARCHITECTURE/tradeoff.md §4)."
+}
