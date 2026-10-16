@@ -55,6 +55,7 @@ setundef -zero
 splitnets
 opt_clean -purge
 tee -o $OUT/synth_stat.txt stat -liberty $LIB
+read_liberty -lib $LIB
 tee -o $OUT/synth_check.txt check
 write_verilog -noattr $OUT/a01_netlist.v
 write_json $OUT/a01_netlist.json
